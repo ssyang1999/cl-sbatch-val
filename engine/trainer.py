@@ -1,6 +1,7 @@
 # Copyright (C) Shaoshu Yang. All Rights Reserved.
 # email: shaoshuyang2020@outlook.com
 from engine.utils.metric_logger import MetricLogger
+from engine.contrastive.build import build_contrastive_model
 from engine.inference import inference
 
 import datetime
@@ -17,6 +18,7 @@ import torch.optim
 import torch.multiprocessing as mp
 import torch.utils.data
 import torch.utils.data.distributed
+import torch.nn.modules.loss as loss
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
@@ -66,7 +68,7 @@ def train_worker(device, ngpus_per_node, cfg):
     # Create model
     logger.info("Creating model.")
     # TODO: call model builder
-    model = nn.Conv2d(1, 1, 1)
+    model = build_contrastive_model(cfg, device=device)
 
     if cfg.DISTRIBUTED:
         # For multiprocessing distributed, DistributedDataParallel constructor
@@ -99,7 +101,8 @@ def train_worker(device, ngpus_per_node, cfg):
 
     # define loss function (criterion) and optimizer
     # TODO: criterion factory
-    criterion = nn.CrossEntropyLoss().cuda(device=device)
+    factory = getattr(loss, cfg.CRITERION)
+    criterion = factory().cuda(device=device)
 
     # TODO: optimizer factory
     # TODO: checkpointer
