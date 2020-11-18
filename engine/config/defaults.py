@@ -31,8 +31,16 @@ _C.MODEL = CN()
 _C.MODEL.CONTRASTIVE = "moco"
 _C.MODEL.SIMILARITY = "consine"
 
-# Architecture definition mode, can be script/mdg
-_C.MODEL.ARCH_MODE = "script"
+# MoCo settings
+_C.MODEL.MOCO_DIM = 128     # feature dimension
+_C.MODEL.MOCO_K = 65536     # queue size
+_C.MODEL.MOCO_M = 0.999     # momentum
+_C.MODEL.MOCO_T = 0.07      # softmax temperature
+_C.MODEL.MOCO_MLP = True    # use mlp projection header
+
+# Architecture definition mode, can be torchvision/script/mdg
+_C.MODEL.ARCH_MODE = "torchvision"
+_C.MODEL.ARCH = "resnet18"
 
 # --------------------------------------------------------------------- #
 #                           criterion options                           #

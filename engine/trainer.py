@@ -101,6 +101,13 @@ def train_worker(cfg, ngpus_per_node, device=None):
     # TODO: criterion factory
     criterion = nn.CrossEntropyLoss().cuda(device=device)
 
+    # TODO: optimizer factory
+    # TODO: checkpointer
+    # TODO: dataset and transforms
+    # TODO: dataloader and sampler
+
+    # TODO: epoch-wise training pipeline
+
 
 def do_contrastive_train(
         cfg,
@@ -151,15 +158,15 @@ def do_contrastive_train(
     # Estimated time of arrival of remaining epoch
     total_eta = meters.time.global_avg * max_iter * (cfg.SOLVER.EPOCH - epoch)
 
-    for iteration, (images, _) in enumerate(data_loader):
+    for iteration, ((xis, xjs), _) in enumerate(data_loader):
         data_time += time.time() - end
 
         if device is not None:
-            images[0] = images[0].cuda(device, non_blocking=True)
-            images[1] = images[1].cuda(device, non_blocking=True)
+            xis = xis.cuda(device, non_blocking=True)
+            xjs = xjs.cuda(device, non_blocking=True)
 
         # Compute embedding and target label
-        output, target, extra = model(images)
+        output, target, extra = model(xis, xjs)
         loss = criterion(output, target)
 
         # acc1/acc5 are (k + 1)-way constant classifier accuracy
