@@ -10,6 +10,8 @@ _C = CN()
 #                    computation device & media options                 #
 # --------------------------------------------------------------------- #
 _C.GPU = None
+_C.DISTRIBUTED = True
+
 _C.MULTIPROC_DIST = True
 _C.DIST_URL = 'tcp://224.66.41.62:23456'
 _C.DIST_BACKEND = 'nccl'
@@ -58,6 +60,13 @@ _C.INPUT = CN()
 #                             data options                              #
 # --------------------------------------------------------------------- #
 _C.DATA = CN()
+
+# --------------------------------------------------------------------- #
+#                         data loader options                           #
+# --------------------------------------------------------------------- #
+_C.DATALOADER = CN()
+# Number of data loading threads
+_C.DATALOADER.NUM_WORKERS = 32
 
 # --------------------------------------------------------------------- #
 #                          evaluation options                           #
