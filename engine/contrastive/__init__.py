@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 
 
-class ContrastiveWarpper(nn.Module):
-    def __init__(self):
+class ContrastiveWrapper(nn.Module):
+    def __init__(self, similarity_function):
         pass
 
     def forward(self, x):

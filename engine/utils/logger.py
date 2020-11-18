@@ -21,3 +21,17 @@ def setup_logger(name, save_dir, filename="log.txt"):
         logger.addHandler(fh)
 
     return logger
+
+
+class GroupedLogger(object):
+    def __init__(self):
+        pass
+
+    def update(self):
+        pass
+
+    def __getattr__(self, item):
+        pass
+
+    def __str__(self):
+        pass
