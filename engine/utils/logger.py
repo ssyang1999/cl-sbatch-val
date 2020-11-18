@@ -4,6 +4,17 @@ import os
 import sys
 
 
+def setup_mute_logger(name):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+
+    # The logger is muted by providing a null handler
+    nh = logging.NullHandler()
+    logger.addHandler(nh)
+
+    return logger
+
+
 def setup_logger(name, save_dir, filename="log.txt"):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
