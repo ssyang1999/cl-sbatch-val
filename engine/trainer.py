@@ -39,7 +39,7 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 
-def train_worker(cfg, ngpus_per_node, device=None):
+def train_worker(device, ngpus_per_node, cfg):
     r"""Distributed parallel training worker
 
     """
@@ -78,7 +78,7 @@ def train_worker(cfg, ngpus_per_node, device=None):
             # When using a single GPU per process and per
             # DistributedDataParallel, we need to divide the batch size
             # ourselves based on the total number of GPUs we have
-            cfg.SOLVER.BATCH_SIZE = int(cfg.SOLVER.BATCH_SIZE / ngpus_per_node)
+            cfg.SOLVER.BATCH_PER_NODE = int(cfg.SOLVER.BATCH_SIZE / ngpus_per_node)
             cfg.DATALOADER.NUM_WORKERS = int((cfg.DATALOADER.NUM_WORKERS + ngpus_per_node - 1)
                                              / ngpus_per_node)
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device])

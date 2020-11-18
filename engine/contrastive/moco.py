@@ -21,7 +21,7 @@ def concat_all_gather(tensor):
 
 
 class MoCo(nn.Module):
-    def __init__(self, cfg):
+    def __init__(self, cfg, device):
         super(MoCo, self).__init__()
 
         # MoCo parameters
@@ -29,6 +29,8 @@ class MoCo(nn.Module):
         self.m = cfg.MODEL.MOCO_M
         self.T = cfg.MODEL.MOCO_T
         self.mlp = cfg.MODEL.MOCO_MLP
+
+        self.device = device
 
         # Encoders
         self.encoder_q = build.__dict__[cfg.MODEL.ARCH](num_classes=cfg.MODEL.MOCO_DIM)
@@ -90,7 +92,7 @@ class MoCo(nn.Module):
         num_gpus = batch_size_all // batch_size_this
 
         # random shuffle index
-        idx_shuffle = torch.randperm(batch_size_all).cuda()
+        idx_shuffle = torch.randperm(batch_size_all).cuda(self.device)
 
         # broadcast to all gpus
         torch.distributed.broadcast(idx_shuffle, src=0)
@@ -154,7 +156,7 @@ class MoCo(nn.Module):
         logits /= self.T
 
         # Labels N x 1
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda(self.device)
 
         # enqueue
         self._dequeue_and_enqueue(k)
