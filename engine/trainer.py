@@ -1,6 +1,9 @@
 # Copyright (C) Shaoshu Yang. All Rights Reserved.
 # email: shaoshuyang2020@outlook.com
-from engine.utils.metric_logger import MetricLogger
+from engine.data.transforms import GaussianBlur, TwoCropsTransfrom
+from engine.data.build import build_dataset, DatasetCatalog
+# from engine.utils.metric_logger import MetricLogger
+from engine.utils.logger import GroupedLogger
 from engine.solver import WarmupMultiStepLR
 from engine.utils.checkpoint import Checkpointer
 from engine.contrastive.build import build_contrastive_model
@@ -42,6 +45,10 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+
+
+def build_metric_logger():
+    pass
 
 
 def train_worker(device, ngpus_per_node, cfg):
@@ -120,20 +127,79 @@ def train_worker(device, ngpus_per_node, cfg):
                                   warmup_method=cfg.SOLVER.WARMUP_METHOD)
 
     # Checkpoint the model, optimizer and learn rate scheduler if is master node
-    checkpointer = None
-    if not cfg.MULTIPROC_DIST or (cfg.MULTIPROC_DIST and cfg.RANK % ngpus_per_node == 0):
-        checkpointer = Checkpointer(
-            model, optimizer, scheduler, save_dir=cfg.OUTPUT_DIR, save_to_disk=True
-        )
+    arguments = dict()
+    arguments["epoch"] = 0
+    # checkpointer = None
+    # if not cfg.MULTIPROC_DIST or (cfg.MULTIPROC_DIST and cfg.RANK % ngpus_per_node == 0):
+    checkpointer = Checkpointer(
+        model, optimizer, scheduler, save_dir=cfg.OUTPUT_DIR, save_to_disk=True
+    )
+
+    # read from checkpoint
+    extra_checkpoint_data = checkpointer.load(cfg.CHECKPOINT)
+    arguments.update(extra_checkpoint_data)
+    start_epoch = arguments["epoch"]
 
     # TODO: dataset and transforms
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+
+    augmentation = [
+        transforms.RandomResizedCrop(112, scale=(0.7, 1.)),
+        transforms.RandomApply([
+            transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
+        ], p=0.8),
+        transforms.RandomGrayscale(p=0.2),
+        transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+    ]
+    trans = TwoCropsTransfrom(transforms.Compose(augmentation))
+    train_dataset = build_dataset(cfg.DATA.TRAIN, trans, DatasetCatalog, is_train=True)
+
+    # TODO: dataloader and sampler
     if cfg.DISTRIBUTED:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
     else:
         train_sampler = None
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=cfg.BATCH_PER_NODE,
+        shuffle=(train_sampler is None),
+        num_workers=cfg.DATALOADER.NUM_WORKERS,
+        pin_memory=True,
+        sampler=train_sampler,
+        drop_last=True,
+    )
 
-    # TODO: dataloader and sampler
+    # TODO: metic logger or tensorboard logger
+
     # TODO: epoch-wise training pipeline
+    for epoch in range(start_epoch, cfg.SOLVER.EPOCH):
+        if cfg.DISTRIBUTED:
+            train_sampler.set_epoch(epoch)
+
+        # train for one epoch
+        do_contrastive_train(
+            cfg=cfg,
+            model=model,
+            data_loader=train_loader,
+            criterion=criterion,
+            optimizer=optimizer,
+            epoch=epoch,
+            device=device,
+            meters=None,
+            logger=logger
+        )
+
+        scheduler.step()
+
+        # Produce checkpoint
+        if not cfg.MULTIPROC_DIST or (cfg.MULTIPROC_DIST and cfg.RANK % ngpus_per_node == 0):
+            checkpointer.save(
+                "checkpoint_{:03d}".format(epoch),
+            )
 
 
 def do_contrastive_train(
@@ -143,9 +209,9 @@ def do_contrastive_train(
         criterion,
         optimizer,
         epoch,
-        device = None,
-        meters = None,
-        logger = None,
+        device=None,
+        meters=None,
+        logger=None,
 ):
     r"""Contrastive training implementation:
 
