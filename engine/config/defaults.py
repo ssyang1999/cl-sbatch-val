@@ -9,7 +9,7 @@ _C = CN()
 # --------------------------------------------------------------------- #
 #                    computation device & media options                 #
 # --------------------------------------------------------------------- #
-_C.GPU = None
+_C.GPU = None                  # Only gpu mode is supported now
 _C.DISTRIBUTED = True
 
 _C.MULTIPROC_DIST = True
@@ -60,9 +60,21 @@ _C.SOLVER.BATCH_SIZE = 256
 _C.SOLVER.BATCH_PER_NODE = 256
 _C.SOLVER.ACCUM_GRAD = 1
 
-_C.SOLVER.OPTIMIZER = "SGD"
+_C.SOLVER.OPTIMIZER = "Adam"
 _C.SOLVER.BASE_LR = 0.001
 
+# Adam optimizer setting
+_C.SOLVER.BETAS = (0.9, 0.999)
+_C.SOLVER.WEIGHT_DECAY = 1e-6
+
+# Multi-step learn rate scheduler
+_C.SOLVER.GAMMA = 0.1
+_C.SOLVER.MILESTONES = (120, 160)
+
+# Learn rate warm up options
+_C.SOLVER.WARMUP_FACTOR = 1.0 / 5
+_C.SOLVER.WARMUP_EPOCHS = 10
+_C.SOLVER.WARMUP_METHOD = "linear"      # linear or constant
 
 # --------------------------------------------------------------------- #
 #                            input options                              #

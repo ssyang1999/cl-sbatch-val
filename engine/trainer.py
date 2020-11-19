@@ -1,6 +1,8 @@
 # Copyright (C) Shaoshu Yang. All Rights Reserved.
 # email: shaoshuyang2020@outlook.com
 from engine.utils.metric_logger import MetricLogger
+from engine.solver import WarmupMultiStepLR
+from engine.utils.checkpoint import Checkpointer
 from engine.contrastive.build import build_contrastive_model
 from engine.inference import inference
 
@@ -19,6 +21,7 @@ import torch.multiprocessing as mp
 import torch.utils.data
 import torch.utils.data.distributed
 import torch.nn.modules.loss as loss
+import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
@@ -100,15 +103,32 @@ def train_worker(device, ngpus_per_node, cfg):
         raise NotImplementedError("Only DistributedDataParallel is supported.")
 
     # define loss function (criterion) and optimizer
-    # TODO: criterion factory
+    # Build up criterion and deploy on corresponding device
     factory = getattr(loss, cfg.CRITERION)
     criterion = factory().cuda(device=device)
 
-    # TODO: optimizer factory
-    # TODO: checkpointer
-    # TODO: dataset and transforms
-    # TODO: dataloader and sampler
+    # Optimizer
+    optimizer = torch.optim.Adam(model.parameters(), cfg.SOLVER.BASE_LR, betas=cfg.SOLVER.BETAS,
+                                 weight_decay=cfg.SOLVER.WEIGHT_DECAY)
 
+    # Learn rate scheduler
+    scheduler = WarmupMultiStepLR(optimizer,
+                                  milestones=cfg.SOLVER.MILESTONES,
+                                  gamma=cfg.SOLVER.GAMMA,
+                                  warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+                                  warmup_iters=cfg.SOLVER.WARMUP_EPOCHES,
+                                  warmup_method=cfg.SOLVER.WARMUP_METHOD)
+
+    # Checkpoint the model, optimizer and learn rate scheduler if is master node
+    checkpointer = None
+    if not cfg.MULTIPROC_DIST or (cfg.MULTIPROC_DIST and cfg.RANK % ngpus_per_node == 0):
+        checkpointer = Checkpointer(
+            model, optimizer, scheduler, save_dir=cfg.OUTPUT_DIR, save_to_disk=True
+        )
+
+    # TODO: dataset and transforms
+
+    # TODO: dataloader and sampler
     # TODO: epoch-wise training pipeline
 
 
