@@ -127,6 +127,10 @@ def train_worker(device, ngpus_per_node, cfg):
         )
 
     # TODO: dataset and transforms
+    if cfg.DISTRIBUTED:
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+    else:
+        train_sampler = None
 
     # TODO: dataloader and sampler
     # TODO: epoch-wise training pipeline
