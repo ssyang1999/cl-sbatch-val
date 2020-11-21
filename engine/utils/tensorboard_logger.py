@@ -7,9 +7,13 @@ import torch
 
 
 class TensorboardLogger(object):
-    def __init__(self, delimiter="\t"):
-        self.meters = defaultdict(SmoothedValue)
-        self.delimiter = delimiter
+    def __init__(self, log_dir=None, purge_step=None, max_queue=10, flush_secs=120):
+        self.writer = SummaryWriter(
+            log_dir=log_dir,
+            purge_step=purge_step,
+            max_queue=max_queue,
+            flush_secs=flush_secs,
+        )
 
     def update(self, **kwargs):
         for k, v in kwargs.items():

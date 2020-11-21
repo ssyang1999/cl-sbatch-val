@@ -2,7 +2,7 @@
 # email: shaoshuyang2020@outlook.com
 from engine.data.transforms import GaussianBlur, TwoCropsTransfrom
 from engine.data.build import build_dataset, DatasetCatalog
-# from engine.utils.metric_logger import MetricLogger
+from engine.utils.metric_logger import MetricLogger
 from engine.utils.logger import GroupedLogger
 from engine.solver import WarmupMultiStepLR
 from engine.utils.checkpoint import Checkpointer
@@ -174,6 +174,7 @@ def train_worker(device, ngpus_per_node, cfg):
     )
 
     # TODO: metic logger or tensorboard logger
+    meters = MetricLogger(delimiter="  ")
 
     # TODO: epoch-wise training pipeline
     for epoch in range(start_epoch, cfg.SOLVER.EPOCH):
@@ -189,11 +190,11 @@ def train_worker(device, ngpus_per_node, cfg):
             optimizer=optimizer,
             epoch=epoch,
             device=device,
-            meters=None,
+            meters=meters,
             logger=logger
         )
 
-        scheduler.step()
+        scheduler.step(epoch=epoch)
 
         # Produce checkpoint
         if not cfg.MULTIPROC_DIST or (cfg.MULTIPROC_DIST and cfg.RANK % ngpus_per_node == 0):
@@ -259,15 +260,18 @@ def do_contrastive_train(
             xjs = xjs.cuda(device, non_blocking=True)
 
         # Compute embedding and target label
-        output, target, extra = model(xis, xjs)
+        # output, target, extra = model(xis, xjs)
+        output, target = model(xis, xjs)
         loss = criterion(output, target)
+        loss.backward()
 
         # acc1/acc5 are (k + 1)-way constant classifier accuracy
         # measure accuracy and record loss
-        acc1, acc5 = accuracy(output, target, topk=(1, 5))
-        meters.update(loss=loss, **extra)
-        meters.update(acc1=acc1, acc5=acc5)
-        loss.backward()
+        if meters:
+            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            meters.update(loss=loss)
+            # meters.update(loss=loss, **extra)
+            meters.update(acc1=acc1, acc5=acc5)
 
         # Compute batch time
         batch_time += time.time() - end
@@ -282,7 +286,8 @@ def do_contrastive_train(
             optimizer.zero_grad()
 
             # Record batch time and data sampling time
-            meters.update(time=batch_time, data=data_time)
+            if meters:
+                meters.update(time=batch_time, data=data_time)
             data_time, batch_time = 0, 0
 
         if iteration % n_print_intv == 0 or iteration == max_iter:

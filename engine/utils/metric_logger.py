@@ -12,13 +12,13 @@ class SmoothedValue(object):
 
     def __init__(self, window_size=20):
         self.deque = deque(maxlen=window_size)
-        self.series = []
+        # self.series = []
         self.total = 0.0
         self.count = 0
 
     def update(self, value):
         self.deque.append(value)
-        self.series.append(value)
+        # self.series.append(value)
         self.count += 1
         self.total += value
 

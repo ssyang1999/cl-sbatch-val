@@ -16,7 +16,7 @@ _C.MULTIPROC_DIST = True
 _C.DIST_URL = 'tcp://224.66.41.62:23456'
 _C.DIST_BACKEND = 'nccl'
 _C.WORLD_SIZE = 1
-_C.RANK = 1
+_C.RANK = 0
 
 # --------------------------------------------------------------------- #
 #                          miscellaneous options                        #
