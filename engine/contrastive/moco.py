@@ -29,6 +29,7 @@ class MoCo(nn.Module):
         self.m = cfg.MODEL.MOCO_M
         self.T = cfg.MODEL.MOCO_T
         self.mlp = cfg.MODEL.MOCO_MLP
+        self.distributed = cfg.DISTRIBUTED
 
         self.device = device
 
@@ -65,7 +66,8 @@ class MoCo(nn.Module):
     @torch.no_grad()
     def _dequeue_and_enqueue(self, keys):
         # gather keys before updating queue
-        keys = concat_all_gather(keys)
+        if self.distributed:
+            keys = concat_all_gather(keys)
 
         batch_size = keys.shape[0]
 
@@ -86,7 +88,8 @@ class MoCo(nn.Module):
         """
         # gather from all gpus
         batch_size_this = x.shape[0]
-        x_gather = concat_all_gather(x)
+        if self.distributed:
+            x_gather = concat_all_gather(x)
         batch_size_all = x_gather.shape[0]
 
         num_gpus = batch_size_all // batch_size_this
@@ -114,7 +117,8 @@ class MoCo(nn.Module):
         """
         # gather from all gpus
         batch_size_this = x.shape[0]
-        x_gather = concat_all_gather(x)
+        if self.distributed:
+            x_gather = concat_all_gather(x)
         batch_size_all = x_gather.shape[0]
 
         num_gpus = batch_size_all // batch_size_this

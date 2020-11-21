@@ -13,6 +13,7 @@ class SimCLR(nn.Module):
 
         # SimCLR options
         self.T = cfg.MODEL.SIMCLR_T
+        self.distributed = cfg.DISTRIBUTED
 
         # Build up feature extractor, while erasing the last fc layer
         features = build.__dict__[cfg.MODEL.ARCH](num_classes=cfg.MODEL.SIMCLR_DIM)
@@ -55,8 +56,9 @@ class SimCLR(nn.Module):
         xjs = self.headding(hjs)    # N x dim
 
         # Gather all features from a batch
-        concat_all_gather(xis)
-        concat_all_gather(xjs)
+        if self.distributed:
+            concat_all_gather(xis)
+            concat_all_gather(xjs)
 
         # Compute similarity function
         represnetations = torch.cat([xis, xjs], dim=0)

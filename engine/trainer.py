@@ -103,7 +103,7 @@ def train_worker(device, ngpus_per_node, cfg):
         torch.cuda.set_device(device)
         model = model.cuda(device)
         # comment out the following line for debugging
-        raise NotImplementedError("Only DistributedDataParallel is supported.")
+        # raise NotImplementedError("Only DistributedDataParallel is supported.")
     else:
         # AllGather implementation (batch shuffle, queue update, etc.) in
         # this code only supports DistributedDataParallel.
