@@ -9,7 +9,7 @@ _C = CN()
 # --------------------------------------------------------------------- #
 #                    computation device & media options                 #
 # --------------------------------------------------------------------- #
-_C.GPU = None                  # Only gpu mode is supported now
+_C.GPU = 0                      # Only gpu mode is supported now
 _C.DISTRIBUTED = True
 
 _C.MULTIPROC_DIST = True
@@ -23,6 +23,7 @@ _C.RANK = 1
 # --------------------------------------------------------------------- #
 _C.OUTPUT_DIR = "."
 _C.CHECKPOINT = "."
+_C.SEED = None
 _C.LOGGER = ('MetricLogger', 'TensorboardLogger')
 
 # --------------------------------------------------------------------- #
