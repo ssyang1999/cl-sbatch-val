@@ -19,7 +19,7 @@ class DatasetCatalog(object):
             data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]
             args = dict(
-                root=os.path.join(data_dir, attrs["img_dir"]),
+                root=os.path.join(data_dir, attrs["root"]),
                 download=attrs["download"]
             )
             return dict(
@@ -61,8 +61,8 @@ def build_dataset(dataset_list, transforms, dataset_catalog, is_train=True):
         args = data["args"]
         # for COCODataset, we want to remove images without annotations
         # during training
-        # if "CIFAR" in data["factory"]:
-        args["transforms"] = transforms
+        if "CIFAR" in data["factory"]:
+            args["transform"] = transforms
         # make dataset from factory
         dataset = factory(**args)
         datasets.append(dataset)

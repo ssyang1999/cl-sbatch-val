@@ -13,6 +13,7 @@ class SimCLR(nn.Module):
 
         # SimCLR options
         self.T = cfg.MODEL.SIMCLR_T
+        self.distributed = cfg.DISTRIBUTED
 
         # Build up feature extractor, while erasing the last fc layer
         features = build.__dict__[cfg.MODEL.ARCH](num_classes=cfg.MODEL.SIMCLR_DIM)
@@ -53,18 +54,23 @@ class SimCLR(nn.Module):
         hjs = self.features(xjs)
         hjs = torch.flatten(hjs, 1)
         xjs = self.headding(hjs)    # N x dim
+        
+        xis = nn.functional.normalize(xis, dim=1)
+        xjs = nn.functional.normalize(xjs, dim=1)
 
         # Gather all features from a batch
-        concat_all_gather(xis)
-        concat_all_gather(xjs)
+        if self.distributed:
+            concat_all_gather(xis)
+            concat_all_gather(xjs)
 
         # Compute similarity function
         represnetations = torch.cat([xis, xjs], dim=0)
-        similarity_matrix = self.similarity(represnetations, represnetations)
+        similarity_matrix = self.similarity(represnetations.unsqueeze(1), represnetations.unsqueeze(0))
 
         # Extract logits
         l_pos = torch.diag(similarity_matrix, self.batch_size)
-        r_pos = torch.diag(similarity_matrix, -self.batch_size)
+        r_pos = torch.diag(similarity_matrix, -self.batch_size
+                           )
 
         # Positive logits: 2N x 1
         positives = torch.cat([l_pos, r_pos]).view(2 * self.batch_size, 1)
