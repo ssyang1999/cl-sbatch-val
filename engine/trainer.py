@@ -2,11 +2,12 @@
 # email: shaoshuyang2020@outlook.com
 from engine.data.transforms import GaussianBlur, TwoCropsTransfrom
 from engine.data.build import build_dataset, DatasetCatalog
-# from engine.utils.metric_logger import MetricLogger
+from engine.utils.metric_logger import MetricLogger
 from engine.utils.logger import GroupedLogger
 from engine.solver import WarmupMultiStepLR
 from engine.utils.checkpoint import Checkpointer
 from engine.contrastive.build import build_contrastive_model
+from engine.utils.logger import setup_logger, setup_mute_logger
 from engine.inference import inference
 
 import datetime
@@ -58,9 +59,10 @@ def train_worker(device, ngpus_per_node, cfg):
     # suppress logging display if not master
     if cfg.MULTIPROC_DIST and device != 0:
         # Capture display logger
-        logger = logging.getLogger("kknight-mute")
+        logger = setup_mute_logger("kknight-mute")
     else:
-        logger = logging.getLogger("kknight")
+        logger = setup_logger("kknight", cfg.OUTPUT_DIR)
+    logger.info(cfg)
 
     if device is not None:
         logger.info("Use GPU: {id} for training".format(id=device))
@@ -123,7 +125,7 @@ def train_worker(device, ngpus_per_node, cfg):
                                   milestones=cfg.SOLVER.MILESTONES,
                                   gamma=cfg.SOLVER.GAMMA,
                                   warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
-                                  warmup_iters=cfg.SOLVER.WARMUP_EPOCHES,
+                                  warmup_iters=cfg.SOLVER.WARMUP_EPOCHS,
                                   warmup_method=cfg.SOLVER.WARMUP_METHOD)
 
     # Checkpoint the model, optimizer and learn rate scheduler if is master node
@@ -132,7 +134,12 @@ def train_worker(device, ngpus_per_node, cfg):
     # checkpointer = None
     # if not cfg.MULTIPROC_DIST or (cfg.MULTIPROC_DIST and cfg.RANK % ngpus_per_node == 0):
     checkpointer = Checkpointer(
-        model, optimizer, scheduler, save_dir=cfg.OUTPUT_DIR, save_to_disk=True
+        model=model,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        save_dir=cfg.OUTPUT_DIR,
+        save_to_disk=True,
+        logger=logger
     )
 
     # read from checkpoint
@@ -165,7 +172,7 @@ def train_worker(device, ngpus_per_node, cfg):
         train_sampler = None
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=cfg.BATCH_PER_NODE,
+        batch_size=cfg.SOLVER.BATCH_PER_NODE,
         shuffle=(train_sampler is None),
         num_workers=cfg.DATALOADER.NUM_WORKERS,
         pin_memory=True,
@@ -174,6 +181,7 @@ def train_worker(device, ngpus_per_node, cfg):
     )
 
     # TODO: metic logger or tensorboard logger
+    meters = MetricLogger(delimiter="  ")
 
     # TODO: epoch-wise training pipeline
     for epoch in range(start_epoch, cfg.SOLVER.EPOCH):
@@ -189,7 +197,7 @@ def train_worker(device, ngpus_per_node, cfg):
             optimizer=optimizer,
             epoch=epoch,
             device=device,
-            meters=None,
+            meters=meters,
             logger=logger
         )
 
@@ -245,11 +253,8 @@ def do_contrastive_train(
 
     # Gradient accumulation interval and statistic display interval
     n_accum_grad = cfg.SOLVER.ACCUM_GRAD
-    n_print_intv = n_accum_grad * cfg.SOLVER.BATCH_SIZE
+    n_print_intv = n_accum_grad * cfg.SOLVER.DISP_INTERVAL
     max_iter = len(data_loader)
-
-    # Estimated time of arrival of remaining epoch
-    total_eta = meters.time.global_avg * max_iter * (cfg.SOLVER.EPOCH - epoch)
 
     for iteration, ((xis, xjs), _) in enumerate(data_loader):
         data_time += time.time() - end
@@ -259,13 +264,15 @@ def do_contrastive_train(
             xjs = xjs.cuda(device, non_blocking=True)
 
         # Compute embedding and target label
-        output, target, extra = model(xis, xjs)
+        # output, target, extra = model(xis, xjs)
+        output, target = model(xis, xjs)
         loss = criterion(output, target)
 
         # acc1/acc5 are (k + 1)-way constant classifier accuracy
         # measure accuracy and record loss
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
-        meters.update(loss=loss, **extra)
+        # meters.update(loss=loss, **extra)
+        meters.update(loss=loss)
         meters.update(acc1=acc1, acc5=acc5)
         loss.backward()
 
@@ -273,10 +280,7 @@ def do_contrastive_train(
         batch_time += time.time() - end
         end = time.time()
 
-        eta_seconds = meters.time.global_avg * (max_iter - iteration) + total_eta
-        eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
-
-        if iteration % n_accum_grad == 0 or iteration == max_iter:
+        if (iteration + 1) % n_accum_grad == 0 or iteration + 1 == max_iter:
             optimizer.step()
             # scheduler.step()
             optimizer.zero_grad()
@@ -285,9 +289,14 @@ def do_contrastive_train(
             meters.update(time=batch_time, data=data_time)
             data_time, batch_time = 0, 0
 
-        if iteration % n_print_intv == 0 or iteration == max_iter:
+        if (iteration + 1) % n_print_intv == 0 or iteration == max_iter:
+            # Estimated time of arrival of remaining epoch
+            total_eta = meters.time.global_avg * max_iter * (cfg.SOLVER.EPOCH - epoch)
+            eta_seconds = meters.time.global_avg * (max_iter - iteration) + total_eta
+            eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
+
             logger.info(
-                meters.delimiter.joint(
+                meters.delimiter.join(
                     [
                         "eta: {eta}",
                         "epoch: {epoch}",

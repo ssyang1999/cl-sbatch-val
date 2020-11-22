@@ -34,7 +34,7 @@ def main():
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Training")
     parser.add_argument(
         "--config-file",
-        default="../configs/simple_rpmnet_demo.yaml",
+        default="../configs/moco_resnet18_cifar10.yaml",
         metavar="FILE",
         help="path to config file",
         type=str,
@@ -49,7 +49,7 @@ def main():
     args = parser.parse_args()
 
     cfg.merge_from_file(args.config_file)
-    cfg.merge_from_list(args.opt)
+    cfg.merge_from_list(args.opts)
     # cfg.freeze()
 
     if cfg.SEED is not None:

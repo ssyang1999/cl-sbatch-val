@@ -13,16 +13,17 @@ _C.GPU = 0                      # Only gpu mode is supported now
 _C.DISTRIBUTED = True
 
 _C.MULTIPROC_DIST = True
-_C.DIST_URL = 'tcp://224.66.41.62:23456'
+_C.DIST_URL = 'tcp://10.198.87.144:8008'
+# _C.DIST_URL = 'tcp://224.66.41.62:23456'
 _C.DIST_BACKEND = 'nccl'
 _C.WORLD_SIZE = 1
-_C.RANK = 1
+_C.RANK = 0
 
 # --------------------------------------------------------------------- #
 #                          miscellaneous options                        #
 # --------------------------------------------------------------------- #
-_C.OUTPUT_DIR = "."
-_C.CHECKPOINT = "."
+_C.OUTPUT_DIR = "../models/"
+_C.CHECKPOINT = ""
 _C.SEED = None
 _C.LOGGER = ('MetricLogger', 'TensorboardLogger')
 
@@ -35,7 +36,7 @@ _C.MODEL.SIMILARITY = "consine"
 
 # MoCo settings
 _C.MODEL.MOCO_DIM = 128     # feature dimension
-_C.MODEL.MOCO_K = 65536     # queue size
+_C.MODEL.MOCO_K = 4096      # queue size
 _C.MODEL.MOCO_M = 0.999     # momentum
 _C.MODEL.MOCO_T = 0.07      # softmax temperature
 _C.MODEL.MOCO_MLP = True    # use mlp projection header
@@ -58,9 +59,10 @@ _C.CRITERION = "CrossEntropyLoss"
 # --------------------------------------------------------------------- #
 _C.SOLVER = CN()
 _C.SOLVER.EPOCH = 200
-_C.SOLVER.BATCH_SIZE = 256
-_C.SOLVER.BATCH_PER_NODE = 256
-_C.SOLVER.ACCUM_GRAD = 1
+_C.SOLVER.BATCH_SIZE = 64
+_C.SOLVER.BATCH_PER_NODE = 64
+_C.SOLVER.DISP_INTERVAL = 20
+_C.SOLVER.ACCUM_GRAD = 2
 
 _C.SOLVER.OPTIMIZER = "Adam"
 _C.SOLVER.BASE_LR = 0.001
