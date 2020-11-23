@@ -8,7 +8,7 @@ class DatasetCatalog(object):
     DATA_DIR = "../datasets"
     DATASETS = {
         "cifar10": {
-            "root": "cirar/",
+            "root": "cifar/",
             "download": True,
         }
     }
