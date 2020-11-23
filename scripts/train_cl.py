@@ -40,6 +40,12 @@ def main():
         type=str,
     )
     parser.add_argument(
+        "--seed",
+        default=None,
+        help="random seed",
+        type=int,
+    )
+    parser.add_argument(
         "opts",
         help="Modify config options using the command-line",
         default=None,
