@@ -58,7 +58,7 @@ def main():
     cfg.merge_from_list(args.opts)
     # cfg.freeze()
 
-    if cfg.SEED is not None:
+    if args.seed is not None:
         random.seed(cfg.SEED)
         torch.manual_seed(cfg.SEED)
         cudnn.deterministic = True

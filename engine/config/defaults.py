@@ -24,7 +24,7 @@ _C.RANK = 0
 # --------------------------------------------------------------------- #
 _C.OUTPUT_DIR = "../models/"
 _C.CHECKPOINT = ""
-_C.SEED = None
+# _C.SEED = None
 _C.LOGGER = ('MetricLogger', 'TensorboardLogger')
 
 # --------------------------------------------------------------------- #
