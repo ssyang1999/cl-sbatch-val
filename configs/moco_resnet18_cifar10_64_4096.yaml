@@ -1,0 +1,6 @@
+MODEL:
+  CONTRASTIVE: "moco"
+  MOCO_K: 4096
+
+SOLVER:
+  BATCH_SIZE: 64

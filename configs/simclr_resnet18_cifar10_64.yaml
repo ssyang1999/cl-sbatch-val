@@ -1,0 +1,5 @@
+MODEL:
+  CONTRASTIVE: "simclr"
+
+SOLVER:
+  BATCH_SIZE: 64
