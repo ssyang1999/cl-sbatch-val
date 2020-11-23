@@ -55,7 +55,7 @@ def main():
     args = parser.parse_args()
 
     cfg.merge_from_file(args.config_file)
-    cfg.merge_from_list(args.opts)
+    cfg.merge_from_list(args.opts[1:])
     # cfg.freeze()
 
     if args.seed is not None:
