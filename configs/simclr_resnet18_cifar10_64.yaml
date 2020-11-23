@@ -1,5 +1,5 @@
 MODEL:
   CONTRASTIVE: "simclr"
-
+OUTPUT_DIR: "../models/simclr_resnet18_cifar10_64/"
 SOLVER:
   BATCH_SIZE: 64
