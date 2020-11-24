@@ -24,6 +24,7 @@ def lincls_inference(
     max_iter = len(dataset)
     logger.info("Start evaluation on {} images".format(len(dataset)))
     # logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
+    model.eval()
 
     meters = MetricLogger(delimiter="  ")
     total_timer = Timer()
@@ -79,8 +80,9 @@ def lincls_inference(
     )
 
     if cfg.DISTRIBUTED:
-        metrics = torch.tensor(list(map(lambda q: q.global_avg, meters.meters.values())))
-        metrics = distributed.all_reduce(metrics)
+        metrics = torch.tensor(list(map(lambda q: q.global_avg, meters.meters.values()))).cuda(device)
+        distributed.all_reduce(metrics)
+        metrics = metrics.cpu()
 
         return {k: v.item() for k, v in zip(meters.meters.keys(), metrics)}
 
@@ -103,6 +105,7 @@ def contrastive_inference(
     max_iter = len(data_loader)
     logger.info("Start evaluation on {} images".format(len(dataset)))
     # logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
+    model.eval()
 
     meters = MetricLogger(delimiter="  ")
     total_timer = Timer()

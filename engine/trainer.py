@@ -45,6 +45,8 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
         # Capture display logger
         logger = setup_mute_logger("kknight-mute")
     else:
+        if not os.path.exists(cfg.OUTPUT_DIR):
+            os.mkdir(cfg.OUTPUT_DIR)
         logger = setup_logger("kknight", cfg.OUTPUT_DIR)
     logger.info(cfg)
 
@@ -274,7 +276,7 @@ def sanity_check(state_dict, pretrained_weights):
     """
     print("=> loading '{}' for sanity check".format(pretrained_weights))
     checkpoint = torch.load(pretrained_weights, map_location="cpu")
-    state_dict_pre = checkpoint['state_dict']
+    state_dict_pre = checkpoint['model']
 
     for k in list(state_dict.keys()):
         # only ignore fc layer
@@ -307,7 +309,7 @@ def do_lincls_train(
     logger.info("Epoch {epoch} now started.".format(epoch=epoch))
 
     # Switch to train mode
-    model.train()
+    model.eval()
 
     # Timers
     end = time.time()

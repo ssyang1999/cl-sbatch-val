@@ -22,7 +22,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
-from engine.trainer import train_worker
+from engine.trainer import lincls_train_worker
 from engine.config import _C as cfg
 
 # model_names = sorted(name for name in models.__dict__
@@ -34,7 +34,7 @@ def main():
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Training")
     parser.add_argument(
         "--config-file",
-        default="../configs/simclr_resnet18_cifar10_64.yaml",
+        default="../configs/moco/lincls_moco_resnet18_cifar10.yaml",
         metavar="FILE",
         help="path to config file",
         type=str,
@@ -84,10 +84,10 @@ def main():
         cfg.WORLD_SIZE = ngpus_per_node * cfg.WORLD_SIZE
         # Use torch.multiprocessing.spawn to launch distributed processes: the
         # main_worker process function
-        mp.spawn(train_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, cfg))
+        mp.spawn(lincls_train_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, cfg))
     else:
         # Simply call main_worker function
-        train_worker(cfg.GPU, ngpus_per_node, cfg)
+        lincls_train_worker(cfg.GPU, ngpus_per_node, cfg)
 
 
 if __name__ == '__main__':
