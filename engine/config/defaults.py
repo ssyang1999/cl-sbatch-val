@@ -90,6 +90,7 @@ _C.INPUT = CN()
 # --------------------------------------------------------------------- #
 _C.DATA = CN()
 _C.DATA.TRAIN = ("cifar10",)
+_C.DATA.TEST = ("cifar10",)
 
 # --------------------------------------------------------------------- #
 #                         data loader options                           #
@@ -102,3 +103,7 @@ _C.DATALOADER.NUM_WORKERS = 32
 #                          evaluation options                           #
 # --------------------------------------------------------------------- #
 _C.EVAL = CN()
+_C.EVAL.BATCH_SIZE = 256
+_C.EVAL.BATCH_PER_NODE = 256
+
+_C.EVAL.EVAL_INTERVAL = 1

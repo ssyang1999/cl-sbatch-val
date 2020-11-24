@@ -8,7 +8,8 @@ from engine.solver import WarmupMultiStepLR
 from engine.utils.checkpoint import Checkpointer
 from engine.contrastive.build import build_contrastive_model
 from engine.utils.logger import setup_logger, setup_mute_logger
-from engine.inference import inference
+from engine.inference import contrastive_inference
+from engine.data.eval import contrastive_accuracy
 
 import datetime
 import logging
@@ -29,23 +30,6 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
-
-
-def accuracy(output, target, topk=(1,)):
-    """Computes the accuracy over the k top predictions for the specified values of k"""
-    with torch.no_grad():
-        maxk = max(topk)
-        batch_size = target.size(0)
-
-        _, pred = output.topk(maxk, 1, True, True)
-        pred = pred.t()
-        correct = pred.eq(target.view(1, -1).expand_as(pred))
-
-        res = []
-        for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
-            res.append(correct_k.mul_(100.0 / batch_size))
-        return res
 
 
 def build_metric_logger():
@@ -93,6 +77,7 @@ def train_worker(device, ngpus_per_node, cfg):
             # DistributedDataParallel, we need to divide the batch size
             # ourselves based on the total number of GPUs we have
             cfg.SOLVER.BATCH_PER_NODE = int(cfg.SOLVER.BATCH_SIZE / ngpus_per_node)
+            cfg.EVAL.BATCH_PER_NODE = int(cfg.EVAL.BATCH_SIZE / ngpus_per_node)
             cfg.DATALOADER.NUM_WORKERS = int((cfg.DATALOADER.NUM_WORKERS + ngpus_per_node - 1)
                                              / ngpus_per_node)
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device])
@@ -164,12 +149,15 @@ def train_worker(device, ngpus_per_node, cfg):
     ]
     trans = TwoCropsTransfrom(transforms.Compose(augmentation))
     train_dataset = build_dataset(cfg.DATA.TRAIN, trans, DatasetCatalog, is_train=True)
+    test_dataset = build_dataset(cfg.DATA.TEST, trans, DatasetCatalog, is_train=False)
 
     # TODO: dataloader and sampler
     if cfg.DISTRIBUTED:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(test_dataset)
     else:
         train_sampler = None
+        test_sampler = None
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=cfg.SOLVER.BATCH_PER_NODE,
@@ -179,9 +167,19 @@ def train_worker(device, ngpus_per_node, cfg):
         sampler=train_sampler,
         drop_last=True,
     )
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=cfg.EVAL.BATCH_PER_NODE,
+        shuffle=False,
+        num_workers=cfg.DATALOADER.NUM_WORKERS,
+        pin_memory=True,
+        sampler=test_sampler,
+        drop_last=True,
+    )
 
     # TODO: metic logger or tensorboard logger
     meters = MetricLogger(delimiter="  ")
+    meters_val = MetricLogger(delimiter="  ")
 
     # TODO: epoch-wise training pipeline
     for epoch in range(start_epoch, cfg.SOLVER.EPOCH):
@@ -200,6 +198,28 @@ def train_worker(device, ngpus_per_node, cfg):
             meters=meters,
             logger=logger
         )
+
+        if (epoch + 1) % cfg.EVAL.EVAL_INTERVAL == 0:
+            metric = contrastive_inference(
+                cfg=cfg,
+                model=model,
+                data_loader=test_loader,
+                device=device,
+                logger=logger,
+            )
+            meters_val.update(**metric)
+            logger.info(
+                meters_val.delimiter.join(
+                    [
+                        "[Evaluation result]: ",
+                        "epoch: {epoch}",
+                        "{meters}",
+                    ]
+                ).format(
+                    epoch=epoch,
+                    meters=str(meters_val),
+                )
+            )
 
         scheduler.step()
         arguments["epoch"] = epoch
@@ -270,7 +290,7 @@ def do_contrastive_train(
 
         # acc1/acc5 are (k + 1)-way constant classifier accuracy
         # measure accuracy and record loss
-        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+        acc1, acc5 = contrastive_accuracy(output, target, topk=(1, 5))
         # meters.update(loss=loss, **extra)
         meters.update(loss=loss)
         meters.update(acc1=acc1, acc5=acc5)
