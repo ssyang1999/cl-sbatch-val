@@ -4,6 +4,7 @@ from engine.utils.metric_logger import MetricLogger
 from collections import OrderedDict
 
 import datetime
+import torch.distributed as distributed
 import torch
 
 
@@ -77,6 +78,12 @@ def lincls_inference(
         )
     )
 
+    if cfg.DISTRIBUTED:
+        metrics = torch.tensor(list(map(lambda q: q.global_avg, meters.meters.values())))
+        metrics = distributed.all_reduce(metrics)
+
+        return {k: v.item() for k, v in zip(meters.meters.keys(), metrics)}
+
     return {k: v.global_avg for k, v in meters.meters.items()}
 
 
@@ -149,5 +156,11 @@ def contrastive_inference(
             total_infer_time,
         )
     )
+
+    if cfg.DISTRIBUTED:
+        metrics = torch.tensor(list(map(lambda q: q.global_avg, meters.meters.values())))
+        metrics = distributed.all_reduce(metrics)
+
+        return {k: v.item() for k, v in zip(meters.meters.keys(), metrics)}
 
     return {k: v.global_avg for k, v in meters.meters.items()}
