@@ -20,7 +20,7 @@ def contrastive_inference(
     dataset = data_loader.dataset
 
     n_print_intv = cfg.SOLVER.DISP_INTERVAL
-    max_iter = len(dataset)
+    max_iter = len(data_loader)
     logger.info("Start evaluation on {} images".format(len(dataset)))
     # logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
 

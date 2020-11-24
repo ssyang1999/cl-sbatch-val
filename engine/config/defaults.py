@@ -103,7 +103,7 @@ _C.DATALOADER.NUM_WORKERS = 32
 #                          evaluation options                           #
 # --------------------------------------------------------------------- #
 _C.EVAL = CN()
-_C.EVAL.BATCH_SIZE = 256
-_C.EVAL.BATCH_PER_NODE = 256
+_C.EVAL.BATCH_SIZE = 64
+_C.EVAL.BATCH_PER_NODE = 64
 
 _C.EVAL.EVAL_INTERVAL = 1

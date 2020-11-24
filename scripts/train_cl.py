@@ -34,7 +34,7 @@ def main():
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Training")
     parser.add_argument(
         "--config-file",
-        default="../configs/simclr_resnet18_cifar10_64.yaml",
+        default="../configs/moco/moco_resnet18_cifar10_64_4096.yaml",
         metavar="FILE",
         help="path to config file",
         type=str,

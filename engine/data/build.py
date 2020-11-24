@@ -69,7 +69,7 @@ def build_dataset(dataset_list, transforms, dataset_catalog, is_train=True):
 
     # for testing, return a list of datasets
     if not is_train:
-        return datasets
+        return datasets[0]
 
     # for training, concatenate all datasets into a single one
     dataset = datasets[0]

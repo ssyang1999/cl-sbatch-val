@@ -222,7 +222,7 @@ def train_worker(device, ngpus_per_node, cfg):
             )
 
         scheduler.step()
-        arguments["epoch"] = epoch
+        arguments["epoch"] = epoch + 1
         # Produce checkpoint
         if not cfg.MULTIPROC_DIST or (cfg.MULTIPROC_DIST and cfg.RANK % ngpus_per_node == 0):
             checkpointer.save(
