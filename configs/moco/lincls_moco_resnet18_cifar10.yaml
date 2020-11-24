@@ -1,0 +1,10 @@
+MODEL:
+  CONTRASTIVE: "moco"
+  MOCO_K: 4096
+OUTPUT_DIR: "../models/lincls_moco_resnet18_cifar10/"
+PRETRAINED: "../models/moco_resnet18_cifar10_64_4096/checkpoint_001.pth"
+SOLVER:
+  BATCH_SIZE: 64
+DATA:
+  TRAIN: ("cifar10",)
+  TEST: ("cifar10",)
