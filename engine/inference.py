@@ -7,6 +7,79 @@ import datetime
 import torch
 
 
+def lincls_inference(
+        cfg,
+        model,
+        data_loader,
+        # dataset_name,
+        device=None,
+        logger=None
+):
+    # convert to a torch.device for efficiency
+    device = torch.device(device)
+    dataset = data_loader.dataset
+
+    n_print_intv = cfg.SOLVER.DISP_INTERVAL
+    max_iter = len(dataset)
+    logger.info("Start evaluation on {} images".format(len(dataset)))
+    # logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
+
+    meters = MetricLogger(delimiter="  ")
+    total_timer = Timer()
+    inference_timer = Timer()
+    total_timer.tic()
+
+    for iter_val, (images, target) in enumerate(data_loader):
+
+        if device is not None:
+            images = images.cuda(device, non_blocking=True)
+            target = target.cuda(device, non_blocking=True)
+
+        # Compute embedding and target label
+        # output, target, extra = model(xis, xjs)
+        inference_timer.tic()
+        output = model(images)
+        inference_timer.toc()
+
+        # acc1/acc5 are (k + 1)-way constant classifier accuracy
+        # measure accuracy and record loss
+        acc1, acc5 = contrastive_accuracy(output, target, topk=(1, 5))
+        meters.update(acc1=acc1, acc5=acc5)
+
+        if (iter_val + 1) % n_print_intv == 0 or iter_val == max_iter:
+            logger.info(
+                meters.delimiter.join(
+                    [
+                        "[Evaluation]",
+                        "iter: {iter}",
+                        "{meters}",
+                        "max mem: {memory:.0f}"
+                    ]
+                ).format(
+                    iter=iter_val,
+                    meters=str(meters),
+                    memory=torch.cuda.max_memory_allocated() / 1024. / 1024.,
+                )
+            )
+
+    # wait for all processes to complete before measuring the time
+    total_time = total_timer.toc()
+    total_time_str = get_time_str(total_time)
+    logger.info(
+        "Total run time: {}".format(
+            total_time_str,
+        )
+    )
+    total_infer_time = get_time_str(inference_timer.total_time)
+    logger.info(
+        "Model inference time: {} ".format(
+            total_infer_time,
+        )
+    )
+
+    return {k: v.global_avg for k, v in meters.meters.items()}
+
+
 def contrastive_inference(
         cfg,
         model,
