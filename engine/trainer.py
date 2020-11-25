@@ -392,6 +392,8 @@ def train_worker(device, ngpus_per_node, cfg):
         # Capture display logger
         logger = setup_mute_logger("kknight-mute")
     else:
+        if not os.path.exists(cfg.OUTPUT_DIR):
+            os.mkdir(cfg.OUTPUT_DIR)
         logger = setup_logger("kknight", cfg.OUTPUT_DIR)
     logger.info(cfg)
 
