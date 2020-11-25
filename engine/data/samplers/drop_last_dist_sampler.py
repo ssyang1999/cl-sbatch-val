@@ -60,7 +60,7 @@ class DropLastDistributedSampler(Sampler):
         return iter(indices)
 
     def __len__(self):
-        return self.num_samples
+        return self.total_size
 
     def set_epoch(self, epoch):
         self.epoch = epoch
