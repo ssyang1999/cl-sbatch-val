@@ -194,8 +194,10 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
     # TODO: dataloader and sampler
     if cfg.DISTRIBUTED:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(test_dataset)
     else:
         train_sampler = None
+        test_sampler = None
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=cfg.SOLVER.BATCH_PER_NODE,
@@ -212,6 +214,7 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
         num_workers=cfg.DATALOADER.NUM_WORKERS,
         pin_memory=True,
         drop_last=True,
+        sampler=test_sampler,
     )
 
     # TODO: metic logger or tensorboard logger

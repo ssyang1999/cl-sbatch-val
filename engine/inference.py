@@ -162,7 +162,7 @@ def contrastive_inference(
 
     if cfg.DISTRIBUTED:
         metrics = torch.tensor(list(map(lambda q: q.global_avg, meters.meters.values())))
-        metrics = distributed.all_reduce(metrics)
+        metrics = distributed.all_reduce(metrics, op=distributed.ReduceOp.SUM)
 
         return {k: v.item() for k, v in zip(meters.meters.keys(), metrics)}
 
