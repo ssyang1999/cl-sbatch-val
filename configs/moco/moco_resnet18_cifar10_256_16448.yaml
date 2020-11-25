@@ -1,0 +1,6 @@
+MODEL:
+  CONTRASTIVE: "moco"
+  MOCO_K: 16448
+OUTPUT_DIR: "../models/moco_resnet18_cifar10_256_16448/"
+SOLVER:
+  BATCH_SIZE: 256
