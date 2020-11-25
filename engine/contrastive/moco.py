@@ -78,6 +78,7 @@ class MoCo(nn.Module):
         try:
             self.queue[:, ptr:ptr + batch_size] = keys.T
         except Exception:
+            print(ptr)
             print(batch_size)
             print(keys.shape)
         ptr = (ptr + batch_size) % self.K  # move pointer
