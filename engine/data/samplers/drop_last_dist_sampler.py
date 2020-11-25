@@ -37,6 +37,7 @@ class DropLastDistributedSampler(Sampler):
         self.rank = rank
         self.epoch = 0
         self.total_size = int(math.floor(len(self.dataset) * 1.0 / batch_size)) * batch_size
+        self.num_samples = self.total_size // self.num_replicas
         self.shuffle = shuffle
 
     def __iter__(self):
@@ -60,7 +61,7 @@ class DropLastDistributedSampler(Sampler):
         return iter(indices)
 
     def __len__(self):
-        return self.total_size
+        return self.num_samples
 
     def set_epoch(self, epoch):
         self.epoch = epoch
