@@ -194,8 +194,8 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
 
     # TODO: dataloader and sampler
     if cfg.DISTRIBUTED:
-        train_sampler = DropLastDistributedSampler(train_dataset, batch_size=cfg.BATCH_SIZE)
-        test_sampler = DropLastDistributedSampler(test_dataset, batch_size=cfg.BATCH_SIZE)
+        train_sampler = DropLastDistributedSampler(train_dataset, batch_size=cfg.SOLVER.BATCH_SIZE)
+        test_sampler = DropLastDistributedSampler(test_dataset, batch_size=cfg.SOLVER.BATCH_SIZE)
     else:
         train_sampler = None
         test_sampler = None
@@ -503,8 +503,8 @@ def train_worker(device, ngpus_per_node, cfg):
 
     # TODO: dataloader and sampler
     if cfg.DISTRIBUTED:
-        train_sampler = DropLastDistributedSampler(train_dataset, batch_size=cfg.BATCH_SIZE)
-        test_sampler = DropLastDistributedSampler(test_dataset, batch_size=cfg.BATCH_SIZE)
+        train_sampler = DropLastDistributedSampler(train_dataset, batch_size=cfg.SOLVER.BATCH_SIZE)
+        test_sampler = DropLastDistributedSampler(test_dataset, batch_size=cfg.SOLVER.BATCH_SIZE)
     else:
         train_sampler = None
         test_sampler = None
