@@ -57,15 +57,12 @@ class SimCLR(nn.Module):
         
         xis = nn.functional.normalize(xis, dim=1)
         xjs = nn.functional.normalize(xjs, dim=1)
-        print("before gather {}".format(xis.requires_grad))
         # print(xis.shape)
 
         # Gather all features from a batch
         if self.distributed:
             xis = concat_all_gather(xis)
             xjs = concat_all_gather(xjs)
-
-        print("after gather {}".format(xis.requires_grad))
 
         # Compute similarity function
         represnetations = torch.cat([xis, xjs], dim=0)
