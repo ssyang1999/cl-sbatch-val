@@ -1,7 +1,8 @@
 MODEL:
   CONTRASTIVE: "simclr"
 DISTRIBUTED: False
-GPU: 2
+MULTIPROC_DIST: False
+GPU: 4
 OUTPUT_DIR: "../models/simclr_resnet18_cifar10_64/"
 SOLVER:
   BATCH_SIZE: 64
