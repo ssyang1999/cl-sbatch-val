@@ -6,3 +6,4 @@ GPU: 5
 OUTPUT_DIR: "../models/simclr_resnet18_cifar10_512/"
 SOLVER:
   BATCH_SIZE: 512
+  BATCH_PER_NODE: 512

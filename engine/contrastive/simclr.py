@@ -67,7 +67,6 @@ class SimCLR(nn.Module):
         # Compute similarity function
         represnetations = torch.cat([xis, xjs], dim=0)
         similarity_matrix = self.similarity(represnetations.unsqueeze(1), represnetations.unsqueeze(0))
-        print(similarity_matrix.shape)
 
         # print(similarity_matrix.shape)
         # Extract logits
