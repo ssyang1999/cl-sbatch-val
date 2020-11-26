@@ -57,7 +57,7 @@ class SimCLR(nn.Module):
         
         xis = nn.functional.normalize(xis, dim=1)
         xjs = nn.functional.normalize(xjs, dim=1)
-        print(xis.shape)
+        # print(xis.shape)
 
         # Gather all features from a batch
         if self.distributed:
@@ -67,7 +67,7 @@ class SimCLR(nn.Module):
         # Compute similarity function
         represnetations = torch.cat([xis, xjs], dim=0)
         similarity_matrix = self.similarity(represnetations.unsqueeze(1), represnetations.unsqueeze(0))
-        print(similarity_matrix.shape)
+        # print(similarity_matrix.shape)
         # Extract logits
         l_pos = torch.diag(similarity_matrix, self.batch_size)
         r_pos = torch.diag(similarity_matrix, -self.batch_size)
@@ -80,6 +80,8 @@ class SimCLR(nn.Module):
 
         logits = torch.cat((positives, negatives), dim=1)
         logits /= self.T
+        print(logits.shape)
+        print(logits.requires_grad)
 
         # Labels: 2N x 1
         labels = torch.zeros(2 * self.batch_size).cuda(self.device).long()
