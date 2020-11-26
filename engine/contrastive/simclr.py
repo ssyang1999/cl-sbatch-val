@@ -71,7 +71,8 @@ class SimCLR(nn.Module):
         # Extract logits
         l_pos = torch.diag(similarity_matrix, self.batch_size)
         r_pos = torch.diag(similarity_matrix, -self.batch_size)
-
+        print(l_pos.shape)
+        print(r_pos.shape)
         # Positive logits: 2N x 1
         positives = torch.cat([l_pos, r_pos]).view(2 * self.batch_size, 1)
 
