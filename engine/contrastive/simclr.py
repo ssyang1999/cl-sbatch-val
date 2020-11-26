@@ -61,8 +61,8 @@ class SimCLR(nn.Module):
 
         # Gather all features from a batch
         if self.distributed:
-            concat_all_gather(xis)
-            concat_all_gather(xjs)
+            xis = concat_all_gather(xis)
+            xjs = concat_all_gather(xjs)
 
         # Compute similarity function
         represnetations = torch.cat([xis, xjs], dim=0)
