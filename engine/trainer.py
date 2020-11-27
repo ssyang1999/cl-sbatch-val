@@ -11,6 +11,7 @@ from engine.utils.logger import setup_logger, setup_mute_logger
 from engine.inference import contrastive_inference, lincls_inference
 from engine.data.eval import contrastive_accuracy
 from engine.data.samplers import DropLastDistributedSampler
+from engine.contrastive.simclr import SimCLRModel
 
 import datetime
 import logging
@@ -67,9 +68,9 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
     # Create model
     logger.info("Creating model.")
     # TODO: call model builderi
-    model = models.__dict__[cfg.MODEL.ARCH](num_classes=10)
-
     if cfg.MODEL.CONTRASTIVE == "moco":
+        model = models.__dict__[cfg.MODEL.ARCH](num_classes=10)
+
         # freeze all layers but the last fc
         for name, param in model.named_parameters():
             if name not in ['fc.weight', 'fc.bias']:
@@ -78,15 +79,15 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
         # initialize fc layer
         model.fc.weight.data.normal_(mean=0.0, std=0.01)
         model.fc.bias.data.zero_()
-        # model = build_contrastive_model(cfg, device=device)
     elif cfg.MODEL.CONTRASTIVE == "simclr":
-        model = nn.Sequential(*list(model.children()))
+        model = SimCLRModel(num_classes=10)
+        # _state_dict = model.state_dict()
 
         for name, param in model.named_parameters():
-            if name not in ['9.weight', '9.bias']:
+            if name not in ['headding.0.wight', 'headding.0.bias']:
                 param.requires_grad = False
 
-        # _state_dict = model.state_dict()
+    # model = build_contrastive_model(cfg, device=device)
 
     if os.path.isfile(cfg.PRETRAINED):
         logger.info("Loading pretrained model from {}".format(cfg.PRETRAINED))
@@ -103,15 +104,14 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
                 # delete renamed or unused k
                 del state_dict[k]
         elif cfg.MODEL.CONTRASTIVE == "simclr":
-            for k in list(state_dict.keys()):
-                if k.startswith('features'):
-                    # remove prefix
-                    state_dict[k[len("features."):]] = state_dict[k]
+            local_dict = model.state_dict()
 
-                del state_dict[k]
+            for k in list(state_dict.keys()):
+                if not k.startswith('features'):
+                    del state_dict[k]
 
         msg = model.load_state_dict(state_dict, strict=False)
-        assert set(msg.missing_keys) == {"9.weight", "9.bias"}
+        assert set(msg.missing_keys) == {"headding.0.weight", "headding.0.bias"}
 
     if cfg.DISTRIBUTED:
         # For multiprocessing distributed, DistributedDataParallel constructor

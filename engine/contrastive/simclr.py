@@ -87,3 +87,27 @@ class SimCLR(nn.Module):
         labels = torch.zeros(2 * self.batch_size).cuda(self.device).long()
         return logits, labels
 
+
+class SimCLRModel(nn.Module):
+    def __init__(self, num_classes):
+        super(SimCLRModel, self).__init__()
+
+        # Build up feature extractor, while erasing the last fc layer
+        features = build.__dict__["resnet18"](num_classes=num_classes)
+
+        # Get hidden vector dimension
+        n_features = features.fc.weight.shape[1]
+        self.features = nn.Sequential(*list(features.children())[:-1])
+
+        self.headding = nn.Sequential(
+            list(features.children())[-1]
+        )
+
+    def forward(self, images):
+        # Compute hidden embedding and representation
+        his = self.features(images)
+        his = torch.flatten(his, 1)
+        # Representation dimension: N x dim
+        xis = self.headding(his)
+
+        return xis
