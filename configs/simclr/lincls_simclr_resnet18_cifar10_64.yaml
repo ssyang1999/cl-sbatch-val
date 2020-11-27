@@ -2,7 +2,7 @@ MODEL:
   CONTRASTIVE: "simclr"
 DISTRIBUTED: False
 MULTIPROC_DIST: False
-GPU: 4
+GPU: 0
 PRETRAINED: "../models/simclr_resnet18_cifar10_64/checkpoint_100.pth"
 OUTPUT_DIR: "../models/lincls_simclr_resnet18_cifar10_64/"
 SOLVER:
