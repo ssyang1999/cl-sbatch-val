@@ -1,0 +1,12 @@
+MODEL:
+  CONTRASTIVE: "simclr"
+DISTRIBUTED: False
+MULTIPROC_DIST: False
+GPU: 4
+PRETRAINED: "../models/simclr_resnet18_cifar10_256/checkpoint_100.pth"
+OUTPUT_DIR: "../models/lincls_simclr_resnet18_cifar10_256/"
+SOLVER:
+  BATCH_SIZE: 64
+DATA:s
+  TRAIN: ("cifar10",)
+  TEST: ("cifar10",)
