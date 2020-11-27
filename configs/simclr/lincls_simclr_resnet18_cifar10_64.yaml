@@ -7,6 +7,6 @@ PRETRAINED: "../models/simclr_resnet18_cifar10_64/checkpoint_100.pth"
 OUTPUT_DIR: "../models/lincls_simclr_resnet18_cifar10_64/"
 SOLVER:
   BATCH_SIZE: 64
-DATA:s
+DATA:
   TRAIN: ("cifar10",)
   TEST: ("cifar10",)
