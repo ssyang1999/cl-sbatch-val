@@ -308,8 +308,8 @@ def sanity_check(contrastive, state_dict, pretrained_weights):
             if 'headding' in k:
                 continue
 
-            assert ((state_dict[k].cpu() == state_dict_pre[k]).all()), \
-                    '{} is changed in linear classifier training.'.format(k)
+            assert ((state_dict[k].cpu() == state_dict_pre[k_pre]).all()), \
+                '{} is changed in linear classifier training.'.format(k)
 
     print("=> sanity check passed.")
 
