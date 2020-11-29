@@ -84,7 +84,7 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
         # _state_dict = model.state_dict()
 
         for name, param in model.named_parameters():
-            if name not in ['headding.0.wight', 'headding.0.bias']:
+            if name not in ['headding.wight', 'headding.bias']:
                 param.requires_grad = False
 
     # model = build_contrastive_model(cfg, device=device)
