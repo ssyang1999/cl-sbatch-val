@@ -278,11 +278,11 @@ def lincls_train_worker(device, ngpus_per_node, cfg):
             checkpointer.save(
                 "checkpoint_{:03d}".format(epoch), **arguments
             )
-        if epoch == start_epoch and cfg.MODEL.CONTRASTIVE == "moco":
-            sanity_check(model.state_dict(), cfg.PRETRAINED)
+        if epoch == start_epoch:
+            sanity_check(cfg.MODEL.CONTRASTIVE, model.state_dict(), cfg.PRETRAINED)
 
 
-def sanity_check(state_dict, pretrained_weights):
+def sanity_check(contrastive, state_dict, pretrained_weights):
     """
     Linear classifier should not change any weights other than the linear layer.
     This sanity check asserts nothing wrong happens (e.g., BN stats updated).
@@ -291,17 +291,25 @@ def sanity_check(state_dict, pretrained_weights):
     checkpoint = torch.load(pretrained_weights, map_location="cpu")
     state_dict_pre = checkpoint['model']
 
-    for k in list(state_dict.keys()):
-        # only ignore fc layer
-        if 'fc.weight' in k or 'fc.bias' in k:
-            continue
+    if contrastive == "moco":
+        for k in list(state_dict.keys()):
+            # only ignore fc layer
+            if 'fc.weight' in k or 'fc.bias' in k:
+                continue
 
-        # name in pretrained model
-        k_pre = 'module.encoder_q.' + k[len('module.'):] \
-            if k.startswith('module.') else 'module.encoder_q.' + k
+            # name in pretrained model
+            k_pre = 'module.encoder_q.' + k[len('module.'):] \
+                if k.startswith('module.') else 'module.encoder_q.' + k
 
-        assert ((state_dict[k].cpu() == state_dict_pre[k_pre]).all()), \
-            '{} is changed in linear classifier training.'.format(k)
+            assert ((state_dict[k].cpu() == state_dict_pre[k_pre]).all()), \
+                '{} is changed in linear classifier training.'.format(k)
+    elif contrastive == "simclr":
+        for k in list(state_dict.keys()):
+            if 'headding' in k:
+                continue
+
+            assert ((state_dict[k].cpu() == state_dict_pre[k]).all()), \
+                    '{} is changed in linear classifier training.'.format(k)
 
     print("=> sanity check passed.")
 
